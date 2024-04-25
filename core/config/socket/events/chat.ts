@@ -3,7 +3,7 @@ import { Chat } from "../../../data/models/chat.model";
 import { verifyToken } from "../../../../domain/users/helpers";
 
 export const registerChatEvents = (io: Server, socket: Socket) => {
-  socket.on(
+  io.on(
     "send-message",
     async (data: {
       message: string;
@@ -92,7 +92,7 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
       await chat?.save();
 
-      io.to(data.room).emit("message", message);
+      io.to(data.room).emit("message", { ...message, room });
       console.log(`Message sent to room ${data.room}: ${data.message}`);
     }
   );
