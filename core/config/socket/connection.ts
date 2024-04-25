@@ -1,12 +1,14 @@
 import { Server, Socket } from "socket.io";
 import { registerChatEvents } from "./events/chat";
 
-export const socketConnection = () => {
-  const io = new Server(8001, {
+export const socketConnection = (server) => {
+  const io = new Server(server, {
     cors: {
       origin: "*",
     },
   });
+
+  console.log(io);
 
   io.on("connection", (socket: Socket) => {
     console.log(`New connection: ${socket.id}`);
