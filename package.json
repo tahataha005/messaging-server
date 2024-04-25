@@ -5,9 +5,8 @@
   "main": "build/index.js",
   "type": "commonjs",
   "scripts": {
-    "build": "npx tsc",
-    "dev": "concurrently \"tsc -w\" \"nodemon build/index.js\"",
-    "start": "node build/index.js",
+    "build": "tsc",
+    "start": "concurrently \"tsc -w\" \"nodemon build/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -26,12 +25,5 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.2",
     "socket.io": "^4.7.5"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.12",
-    "@types/mongoose": "^5.11.97",
-    "@types/node": "^16.11.7",
-    "ts-node": "10.9.2",
-    "typescript": "^5.4.5"
   }
 }
