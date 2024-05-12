@@ -48,7 +48,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "User not found" });
     }
 
-    const check = await comparePassword(password, user.password);
+    const check = await comparePassword(password, user.password!);
 
     if (!check) {
       return res.status(400).json({ error: "Invalid credentials" });
@@ -76,4 +76,34 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   const user = await User.findById(id);
 
   res.status(200).json(user);
+};
+
+export const oAuthLogin = async (req: Request, res: Response) => {
+  try {
+    const { email, firstName, lastName, phone, auth } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      const newUser = new User({
+        email,
+        firstName,
+        lastName,
+        phone,
+        tunnel: Math.random().toString(36).substring(7),
+      });
+
+      await newUser.save();
+
+      const token = await generateToken(newUser);
+
+      return res.status(201).json({ user: newUser, token });
+    }
+
+    const token = await generateToken(user);
+
+    res.status(200).json({ user, token });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 };

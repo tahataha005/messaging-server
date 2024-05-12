@@ -8,7 +8,7 @@ export const chatSchema = new Schema({
   },
   users: [
     {
-      type: Types.ObjectId,
+      type: Types.ObjectId || String,
       ref: "User",
     },
   ],
@@ -21,6 +21,10 @@ export const chatSchema = new Schema({
       message: {
         type: String,
         required: true,
+      },
+      read: {
+        type: Boolean,
+        default: false,
       },
       createdAt: {
         type: Date,

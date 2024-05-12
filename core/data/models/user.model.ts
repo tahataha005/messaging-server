@@ -9,5 +9,5 @@ export type UserDocument = {
   lastName: string;
   email: string;
   phone?: string | null | undefined;
-  password: string;
+  password?: string | null | undefined;
 };

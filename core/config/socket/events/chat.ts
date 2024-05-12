@@ -1,89 +1,22 @@
 import { Server, Socket } from "socket.io";
 import { Chat } from "../../../data/models/chat.model";
 import { verifyToken } from "../../../../domain/users/helpers";
+import { onlineUsers } from "../connection";
 
 export const registerChatEvents = (io: Server, socket: Socket) => {
-  io.on(
-    "send-message",
-    async (data: {
-      message: string;
-      room: string;
-      to: string;
-      token: string;
-    }) => {
-      console.log(data);
-
-      const { id }: any = await verifyToken(data.token);
-
-      const message = {
-        user: id,
-        message: data.message,
-        createdAt: Date.now().toString(),
-      };
-
-      socket.to(data.to).emit("message", { ...data, ...message });
-    }
-  );
-
-  socket.on("my-chats", async ({ tunnel }) => {
-    socket.join(tunnel);
-
-    console.log(`User joined room of tunnel ${tunnel}`);
-  });
-
-  socket.on("join-room", async ({ room, token }) => {
-    const chat = await Chat.findOne({ room });
-
-    if (!chat) {
-      const newChat = new Chat({ room });
-      const data: any = await verifyToken(token);
-
-      newChat.users.push(data.id);
-
-      await newChat.save();
-    } else {
-      console.log(token);
-      const { id }: any = await verifyToken(token);
-
-      const check = chat.users.find((user) => {
-        console.log(user, id);
-
-        return user == id;
-      });
-
-      if (!check) {
-        chat.users.push(id);
-
-        await chat.save();
-      }
-    }
-
-    socket.join(room);
-
-    io.to(room).emit("room-created", room);
-  });
-
-  socket.on("leave-room", (room: string) => {
-    socket.leave(room);
-    io.to(room).emit("room-left", room);
-  });
-
   socket.on(
     "send-message",
-    async (data: {
-      room: string;
-      message: string;
-      token: string;
-      to: string;
-    }) => {
-      const { room } = data;
-
+    async (data: { room: string; message: string; token: string }) => {
       const { id }: any = await verifyToken(data.token);
 
+      const { room } = data;
+
+      const date = new Date();
       const message = {
         user: id,
         message: data.message,
-        createdAt: Date.now().toString(),
+        createdAt: date.toISOString(),
+        read: false,
       };
 
       const chat = await Chat.findOne({ room });
@@ -92,8 +25,20 @@ export const registerChatEvents = (io: Server, socket: Socket) => {
 
       await chat?.save();
 
-      io.to(data.room).emit("message", { ...message, room });
-      console.log(`Message sent to room ${data.room}: ${data.message}`);
+      const recipient: any = chat?.users.find((user) => user.toString() !== id);
+
+      const self = onlineUsers.find((user) => user.id === id);
+      const onlineRecipient = onlineUsers.find(
+        (user) => user.id === recipient.toString()
+      );
+
+      if (onlineRecipient) {
+        io.to(onlineRecipient.room).emit("new-message", message);
+      }
+
+      if (self) {
+        io.to(self.room).emit("new-message", message);
+      }
     }
   );
 };

@@ -1,5 +1,13 @@
 import { Server, Socket } from "socket.io";
 import { registerChatEvents } from "./events/chat";
+import { verifyToken } from "../../../domain/users/helpers";
+
+type OnlineUser = {
+  room: string;
+  id: string;
+};
+
+export let onlineUsers: OnlineUser[] = [];
 
 export const socketConnection = (server) => {
   const io = new Server(server, {
@@ -8,15 +16,27 @@ export const socketConnection = (server) => {
     },
   });
 
-  console.log(io);
+  io.on("connection", async (socket: Socket) => {
+    const token = socket.handshake.auth.token;
 
-  io.on("connection", (socket: Socket) => {
-    console.log(`New connection: ${socket.id}`);
+    const { id }: any = await verifyToken(token);
+
+    const isOnline = onlineUsers.some((user) => user.id === id);
+
+    if (!isOnline) {
+      onlineUsers.push({ id, room: socket.id });
+    }
+
+    io.emit("online", onlineUsers);
 
     registerChatEvents(io, socket);
 
+    console.log(onlineUsers);
+
     socket.on("disconnect", () => {
-      console.log(`User disconnected: ${socket.id}`);
+      onlineUsers = onlineUsers.filter((user) => user.id !== id);
+
+      io.emit("online", onlineUsers);
     });
   });
 };
